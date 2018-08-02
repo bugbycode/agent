@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jing.cloud.agent.client.handler.ClientHandler;
+import com.jing.cloud.agent.forward.handler.RemoteHandler;
 import com.jing.cloud.config.IdleConfig;
 import com.jing.cloud.handler.MessageDecoder;
 import com.jing.cloud.handler.MessageEncoder;
@@ -27,6 +28,8 @@ public class StartupRunnable implements Runnable {
 	private String host;
 	
 	private int port;
+	
+	private ChannelFuture future;
 	
 	public StartupRunnable(String host, int port) {
 		this.host = host;
@@ -55,7 +58,7 @@ public class StartupRunnable implements Runnable {
 		});
 		
 		try {
-			ChannelFuture future= client.connect(host, port).sync();
+			future = client.connect(host, port).sync();
 			if (future.isSuccess()) {
 				 // 得到管道，便于通信
 				logger.info("代理客户端开启成功...");
@@ -72,4 +75,8 @@ public class StartupRunnable implements Runnable {
 		}
 	}
 
+	
+	public void writeAndFlush(Object msg) {
+		future.channel().writeAndFlush(msg);
+	}
 }

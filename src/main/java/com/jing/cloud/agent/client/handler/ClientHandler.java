@@ -35,6 +35,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		}else if(type == MessageCode.REGISTER_SUCCESS) {
 			logger.info("认证成功......");
 			registerStatus = true;
+		} else if(type == MessageCode.TRANSFER_DATA) {
+			
 		}
 	}
 	
