@@ -37,6 +37,9 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 			registerStatus = true;
 		} else if(type == MessageCode.TRANSFER_DATA) {
 			
+		} else if(type == MessageCode.CONNECTION) {
+			Message result = new Message(message.getToken(), MessageCode.CONNECTION_SUCCESS, data);
+			ctx.channel().writeAndFlush(result);
 		}
 	}
 	
