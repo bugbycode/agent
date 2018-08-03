@@ -30,7 +30,7 @@ public class RemoteHandler extends SimpleChannelInboundHandler<ByteBuf> {
 		byte[] data = new byte[msg.readableBytes()];
 		msg.readBytes(data);
 		
-		System.out.println("recv " + new String(data));
+		//System.out.println("recv " + new String(data));
 		
 		Message message = new Message();
 		message.setData(data);

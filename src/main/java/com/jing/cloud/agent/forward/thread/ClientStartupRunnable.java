@@ -77,14 +77,14 @@ public class ClientStartupRunnable implements Runnable {
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
 					 // 得到管道，便于通信
-					logger.info("连接目标服务成功...");
+					logger.info("Connection to " + host + ":" + port + " successfully.");
 					
 					message.setType(MessageCode.CONNECTION_SUCCESS);
 					
 					clientMap.put(token, ClientStartupRunnable.this);
 					
 				 } else{
-					 logger.error("连接目标服务失败...");
+					 logger.info("Connection to " + host + ":" + port + " failed.");
 					 
 					 message.setType(MessageCode.CONNECTION_ERROR);
 				 }
@@ -103,6 +103,8 @@ public class ClientStartupRunnable implements Runnable {
 		if(group != null) {
 			group.shutdownGracefully();
 		}
+		logger.info("Disconnection to " + host + ":" + port + ".");
+		clientMap.remove(token);
 	}
 	
 	public void writeAndFlush(Object msg) {

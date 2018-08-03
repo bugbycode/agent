@@ -12,6 +12,9 @@ import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
 import com.jing.cloud.config.IdleConfig;
 import com.jing.cloud.handler.MessageDecoder;
 import com.jing.cloud.handler.MessageEncoder;
+import com.jing.cloud.module.Authentication;
+import com.jing.cloud.module.Message;
+import com.jing.cloud.module.MessageCode;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -58,7 +61,7 @@ public class StartupRunnable implements Runnable {
 				 // 初始化编码器，解码器，处理器
 				 ch.pipeline().addLast(new MessageDecoder());
 				 ch.pipeline().addLast(new MessageEncoder());
-				 ch.pipeline().addLast(new ClientHandler(clientMap));
+				 ch.pipeline().addLast(new ClientHandler(StartupRunnable.this,clientMap));
 			}
 			
 		});
@@ -69,8 +72,12 @@ public class StartupRunnable implements Runnable {
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
 					logger.info("连接代理服务器成功...");
-				 }
-				 else{
+					Message msg = new Message();
+					msg.setType(MessageCode.REGISTER);
+					Authentication authInfo = new Authentication("fort", "fort");
+					msg.setData(authInfo);
+					future.channel().writeAndFlush(msg);
+				 } else{
 					 logger.error("连接代理服务器失败...");
 					 group.shutdownGracefully();
 					 new Thread(StartupRunnable.this).start();

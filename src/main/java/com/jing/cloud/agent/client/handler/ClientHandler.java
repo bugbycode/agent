@@ -5,6 +5,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jing.cloud.agent.client.thread.StartupRunnable;
 import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
 import com.jing.cloud.module.Authentication;
 import com.jing.cloud.module.ConnectionInfo;
@@ -24,10 +25,13 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	private boolean registerStatus = false; //客户端注册状态
 	
+	private StartupRunnable run;
+	
 	private Map<String,ClientStartupRunnable> clientMap;
 	
-	public ClientHandler(Map<String,ClientStartupRunnable> clientMap) {
+	public ClientHandler(StartupRunnable run,Map<String,ClientStartupRunnable> clientMap) {
 		this.clientMap = clientMap;
+		this.run = run;
 	}
 	
 	@Override
@@ -43,6 +47,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		}else if(type == MessageCode.REGISTER_SUCCESS) {
 			logger.info("认证成功......");
 			registerStatus = true;
+		} else if(type == MessageCode.CLOSE_CONNECTION) {//关闭连接
+			ClientStartupRunnable client = clientMap.get(token);
+			if(client == null) {
+				return;
+			}
+			client.shutdown();
 		} else if(type == MessageCode.TRANSFER_DATA) { //通信二进制数据
 			ClientStartupRunnable client = clientMap.get(token);
 			if(client == null) {
@@ -64,12 +74,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	@Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		logger.info("连接服务成功");
+		//logger.info("连接服务成功");
 	}
 	
 	@Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-		logger.info("消息读取完毕......");
+		//logger.info("代理客户端消息读取完毕......");
     }
 	
 	@Override
@@ -77,11 +87,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
         logger.error(cause.getMessage());
         cause.printStackTrace();
+        new Thread(run).start();
     }
 	
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("连接关闭");
+        //logger.info("连接关闭");
         super.channelInactive(ctx);
     }
 
@@ -94,21 +105,13 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 				logger.debug("===服务端===(READER_IDLE 读超时)");
 			} else if (event.state() == IdleState.WRITER_IDLE) {
 				/* 写超时 */
-				logger.debug("发送心跳");
+				//logger.debug("发送心跳");
 				Message msg = new Message();
-				if(registerStatus) {
-					msg.setType(MessageCode.HEARTBEAT);
-				}else {
-					//String token = RandomUtil.GetGuid32();
-					msg.setType(MessageCode.REGISTER);
-					Authentication authInfo = new Authentication("fort", "fort");
-					msg.setData(authInfo);
-					//msg.setToken(token);
-				}
+				msg.setType(MessageCode.HEARTBEAT);
 				ctx.channel().writeAndFlush(msg);
 			} else if (event.state() == IdleState.ALL_IDLE) {
 				/* 总超时 */
-				logger.debug("===服务端===(ALL_IDLE 总超时)");
+				//logger.debug("===服务端===(ALL_IDLE 总超时)");
 			}
 		}
 	}
