@@ -71,7 +71,7 @@ public class ClientStartupRunnable implements Runnable {
 
 		Message message = new Message();
 		message.setToken(token);
-		client.connect(host, port).addListener(new ChannelFutureListener() {
+		future = client.connect(host, port).addListener(new ChannelFutureListener() {
 			
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {

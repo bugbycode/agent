@@ -76,6 +76,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         ctx.close();
         logger.error(cause.getMessage());
+        cause.printStackTrace();
     }
 	
     @Override
