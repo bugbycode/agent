@@ -1,13 +1,18 @@
 package com.jing.cloud.agent.client.handler;
 
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
 import com.jing.cloud.module.Authentication;
+import com.jing.cloud.module.ConnectionInfo;
 import com.jing.cloud.module.Message;
 import com.jing.cloud.module.MessageCode;
 import com.util.RandomUtil;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
@@ -19,14 +24,17 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	private boolean registerStatus = false; //客户端注册状态
 	
-	public ClientHandler() {
-		
+	private Map<String,ClientStartupRunnable> clientMap;
+	
+	public ClientHandler(Map<String,ClientStartupRunnable> clientMap) {
+		this.clientMap = clientMap;
 	}
 	
 	@Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		logger.info("收到服务器返回消息:" + msg);
 		Message message = (Message)msg;
+		String token = message.getToken();
 		int type = message.getType();
 		Object data = message.getData();
 		if(type == MessageCode.REGISTER_ERROR) {
@@ -35,11 +43,22 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		}else if(type == MessageCode.REGISTER_SUCCESS) {
 			logger.info("认证成功......");
 			registerStatus = true;
-		} else if(type == MessageCode.TRANSFER_DATA) {
+		} else if(type == MessageCode.TRANSFER_DATA) { //通信二进制数据
+			ClientStartupRunnable client = clientMap.get(token);
+			if(client == null) {
+				return;
+			}
+			byte[] data_buff = (byte[]) data;
+			ByteBuf buf = ctx.alloc().buffer(data_buff.length);
+			buf.writeBytes(data_buff);
+			client.writeAndFlush(buf);//将数据传输至目标设备
+		} else if(type == MessageCode.CONNECTION) { //建立连接
 			
-		} else if(type == MessageCode.CONNECTION) {
-			Message result = new Message(message.getToken(), MessageCode.CONNECTION_SUCCESS, data);
-			ctx.channel().writeAndFlush(result);
+			ConnectionInfo conn = (ConnectionInfo) message.getData();
+			
+			ClientStartupRunnable client = new ClientStartupRunnable(ctx.channel(), token, 
+					conn.getHost(), conn.getPort(),clientMap);
+			new Thread(client).start();
 		}
 	}
 	
