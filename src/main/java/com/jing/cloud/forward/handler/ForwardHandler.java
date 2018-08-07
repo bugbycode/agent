@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 import com.jing.cloud.forward.client.NettyClient;
 import com.jing.cloud.module.Message;
 import com.jing.cloud.module.MessageCode;
-import com.util.RandomUtil;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;

@@ -32,7 +32,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	@Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		logger.info("收到服务器返回消息:" + msg);
+		//logger.info("收到服务器返回消息:" + msg);
 		Message message = (Message)msg;
 		String token = message.getToken();
 		int type = message.getType();
