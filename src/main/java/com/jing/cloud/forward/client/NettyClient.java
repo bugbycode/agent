@@ -37,6 +37,10 @@ public class NettyClient {
 	
 	private Map<String,NettyClient> nettyClientMap;
 	
+	private String host = "";
+	
+	private int port;
+	
 	public NettyClient(Channel serverChannel,
 			Map<String,NettyClient> nettyClientMap) {
 		this.serverChannel = serverChannel;
@@ -58,7 +62,10 @@ public class NettyClient {
 			}
 		});
 		
-		future = this.remoteClient.connect(conn.getHost(), conn.getPort()).addListener(new ChannelFutureListener() {
+		host = conn.getHost();
+		port = conn.getPort();
+		
+		future = this.remoteClient.connect(host, port).addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				Message message = new Message();
@@ -77,11 +84,23 @@ public class NettyClient {
 	}
 	
 	public void writeAndFlush(Object msg) {
+		if(future == null) {
+			return;
+		}
 		future.channel().writeAndFlush(msg);
 	}
 	
 	public void close() {
+		if(future == null) {
+			return;
+		}
 		future.channel().close();
+		
+		if(remoteGroup == null) {
+			return;
+		}
+		
 		remoteGroup.shutdownGracefully();
+		logger.info("Disconnection to " + host + ":" + port + " .");
 	}
 }
