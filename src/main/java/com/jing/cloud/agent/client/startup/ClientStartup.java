@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import com.jing.cloud.agent.client.thread.StartupRunnable;
 import com.jing.cloud.forward.client.NettyClient;
 
-import io.netty.channel.Channel;
-
 @Component
 @Configuration
 public class ClientStartup implements ApplicationRunner {
