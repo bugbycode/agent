@@ -10,7 +10,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import com.jing.cloud.agent.client.thread.StartupRunnable;
-import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
+import com.jing.cloud.forward.client.NettyClient;
+
+import io.netty.channel.Channel;
 
 @Component
 @Configuration
@@ -23,10 +25,10 @@ public class ClientStartup implements ApplicationRunner {
 	private int port;
 	
 	@Autowired
-	private Map<String,ClientStartupRunnable> clientMap;
+	private Map<String,NettyClient> nettyClientMap;
 	
 	public void run(ApplicationArguments arg0) throws Exception {
-		StartupRunnable run = new StartupRunnable(host,port,clientMap);
+		StartupRunnable run = new StartupRunnable(host,port,nettyClientMap);
 		new Thread(run).start();
 	}
 

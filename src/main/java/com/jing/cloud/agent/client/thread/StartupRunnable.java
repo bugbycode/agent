@@ -7,12 +7,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jing.cloud.agent.client.handler.ClientHandler;
-import com.jing.cloud.agent.forward.handler.RemoteHandler;
-import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
 import com.jing.cloud.config.IdleConfig;
+import com.jing.cloud.forward.client.NettyClient;
 import com.jing.cloud.handler.MessageDecoder;
 import com.jing.cloud.handler.MessageEncoder;
 import com.jing.cloud.module.Authentication;
+import com.jing.cloud.module.HandlerConst;
 import com.jing.cloud.module.Message;
 import com.jing.cloud.module.MessageCode;
 
@@ -37,12 +37,12 @@ public class StartupRunnable implements Runnable {
 	
 	private ChannelFuture future;
 	
-	private Map<String,ClientStartupRunnable> clientMap;
+	private Map<String,NettyClient> nettyClientMap;
 	
-	public StartupRunnable(String host, int port,Map<String,ClientStartupRunnable> clientMap) {
+	public StartupRunnable(String host, int port,Map<String,NettyClient> nettyClientMap) {
 		this.host = host;
 		this.port = port;
-		this.clientMap = clientMap;
+		this.nettyClientMap = nettyClientMap;
 	}
 
 	public void run() {
@@ -59,9 +59,11 @@ public class StartupRunnable implements Runnable {
 						IdleConfig.WRITE_IDEL_TIME_OUT,
 						IdleConfig.ALL_IDEL_TIME_OUT, TimeUnit.SECONDS));
 				 // 初始化编码器，解码器，处理器
-				 ch.pipeline().addLast(new MessageDecoder());
+				 ch.pipeline().addLast(new MessageDecoder(HandlerConst.MAX_FRAME_LENGTH, HandlerConst.LENGTH_FIELD_OFFSET, 
+							HandlerConst.LENGTH_FIELD_LENGTH, HandlerConst.LENGTH_AD_JUSTMENT, 
+							HandlerConst.INITIAL_BYTES_TO_STRIP));
 				 ch.pipeline().addLast(new MessageEncoder());
-				 ch.pipeline().addLast(new ClientHandler(StartupRunnable.this,clientMap));
+				 ch.pipeline().addLast(new ClientHandler(StartupRunnable.this,nettyClientMap));
 			}
 			
 		});
@@ -88,7 +90,7 @@ public class StartupRunnable implements Runnable {
 	}
 
 	
-	public void writeAndFlush(Object msg) {
+	public synchronized void writeAndFlush(Object msg) {
 		future.channel().writeAndFlush(msg);
 	}
 }

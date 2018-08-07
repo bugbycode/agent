@@ -7,13 +7,13 @@ import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
+import com.jing.cloud.forward.client.NettyClient;
 
 @Configuration
 public class NettyConfig {
 	
-	@Bean("clientMap")
-	public Map<String,ClientStartupRunnable> getClientMap(){
-		return Collections.synchronizedMap(new HashMap<String,ClientStartupRunnable>());
+	@Bean("nettyClientMap")
+	public Map<String,NettyClient> getNettyClientMap(){
+		return Collections.synchronizedMap(new HashMap<String,NettyClient>());
 	}
 }

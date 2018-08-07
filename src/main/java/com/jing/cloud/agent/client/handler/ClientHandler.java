@@ -6,12 +6,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jing.cloud.agent.client.thread.StartupRunnable;
-import com.jing.cloud.agent.forward.thread.ClientStartupRunnable;
-import com.jing.cloud.module.Authentication;
-import com.jing.cloud.module.ConnectionInfo;
+import com.jing.cloud.forward.client.NettyClient;
 import com.jing.cloud.module.Message;
 import com.jing.cloud.module.MessageCode;
-import com.util.RandomUtil;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,15 +20,14 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
 	private final Logger logger = LogManager.getLogger(ClientHandler.class);
 	
-	private boolean registerStatus = false; //客户端注册状态
-	
 	private StartupRunnable run;
 	
-	private Map<String,ClientStartupRunnable> clientMap;
+	private Map<String,NettyClient> nettyClientMap;
 	
-	public ClientHandler(StartupRunnable run,Map<String,ClientStartupRunnable> clientMap) {
-		this.clientMap = clientMap;
+	public ClientHandler(StartupRunnable run,
+			Map<String,NettyClient> nettyClientMap) {
 		this.run = run;
+		this.nettyClientMap = nettyClientMap;
 	}
 	
 	@Override
@@ -40,35 +36,28 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		Message message = (Message)msg;
 		String token = message.getToken();
 		int type = message.getType();
-		Object data = message.getData();
 		if(type == MessageCode.REGISTER_ERROR) {
 			ctx.close();
 			logger.info("认证失败关闭连接......");
 		}else if(type == MessageCode.REGISTER_SUCCESS) {
 			logger.info("认证成功......");
-			registerStatus = true;
 		} else if(type == MessageCode.CLOSE_CONNECTION) {//关闭连接
-			ClientStartupRunnable client = clientMap.get(token);
-			if(client == null) {
-				return;
+			NettyClient client = nettyClientMap.get(token);
+			if(client != null) {
+				client.close();
 			}
-			client.shutdown();
 		} else if(type == MessageCode.TRANSFER_DATA) { //通信二进制数据
-			ClientStartupRunnable client = clientMap.get(token);
-			if(client == null) {
-				return;
+			//将数据传输至目标设备
+			NettyClient client = nettyClientMap.get(token);
+			if(client != null) {
+				byte[] data = (byte[]) message.getData();
+				ByteBuf buf = ctx.alloc().buffer(data.length);
+				buf.writeBytes(data);
+				client.writeAndFlush(buf);
 			}
-			byte[] data_buff = (byte[]) data;
-			ByteBuf buf = ctx.alloc().buffer(data_buff.length);
-			buf.writeBytes(data_buff);
-			client.writeAndFlush(buf);//将数据传输至目标设备
 		} else if(type == MessageCode.CONNECTION) { //建立连接
-			
-			ConnectionInfo conn = (ConnectionInfo) message.getData();
-			
-			ClientStartupRunnable client = new ClientStartupRunnable(ctx.channel(), token, 
-					conn.getHost(), conn.getPort(),clientMap);
-			new Thread(client).start();
+			NettyClient client = new NettyClient(ctx.channel(), nettyClientMap);
+			client.connection(message);
 		}
 	}
 	
@@ -94,6 +83,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         //logger.info("连接关闭");
         super.channelInactive(ctx);
+        
     }
 
 	@Override
