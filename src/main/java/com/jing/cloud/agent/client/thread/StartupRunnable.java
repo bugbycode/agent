@@ -81,7 +81,7 @@ public class StartupRunnable implements Runnable {
 					logger.info("Connection to " + host + ":" + port + " success...");
 					Message msg = new Message();
 					msg.setType(MessageCode.REGISTER);
-					Authentication authInfo = new Authentication(clientId, secret);
+					Authentication authInfo = new Authentication(secret, clientId);
 					msg.setData(authInfo);
 					future.channel().writeAndFlush(msg);
 				 } else{
