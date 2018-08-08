@@ -50,7 +50,11 @@ public class ForwardHandler extends SimpleChannelInboundHandler<ByteBuf> {
 		message.setToken(token);
 		serverChannel.writeAndFlush(message);
 		super.channelInactive(ctx);
-		nettyClientMap.get(token).close();
+		
+		NettyClient client = nettyClientMap.get(token);
+		if(client != null) {
+			client.close();
+		}
 		nettyClientMap.remove(token);
 	}
 	
