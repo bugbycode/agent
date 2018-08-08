@@ -108,6 +108,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 				NettyClient client = entry.getValue();
 				client.close();
 			}
+			nettyClientMap.clear();
 		}
 	}
 }
