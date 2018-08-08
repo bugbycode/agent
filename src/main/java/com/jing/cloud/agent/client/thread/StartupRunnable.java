@@ -35,13 +35,19 @@ public class StartupRunnable implements Runnable {
 	
 	private int port;
 	
+	private String clientId;
+	
+	private String secret;
+	
 	private ChannelFuture future;
 	
 	private Map<String,NettyClient> nettyClientMap;
 	
-	public StartupRunnable(String host, int port,Map<String,NettyClient> nettyClientMap) {
+	public StartupRunnable(String host, int port,String clientId,String secret,Map<String,NettyClient> nettyClientMap) {
 		this.host = host;
 		this.port = port;
+		this.clientId = clientId;
+		this.secret = secret;
 		this.nettyClientMap = nettyClientMap;
 	}
 
@@ -75,7 +81,7 @@ public class StartupRunnable implements Runnable {
 					logger.info("Connection to " + host + ":" + port + " success...");
 					Message msg = new Message();
 					msg.setType(MessageCode.REGISTER);
-					Authentication authInfo = new Authentication("fort", "fort");
+					Authentication authInfo = new Authentication(clientId, secret);
 					msg.setData(authInfo);
 					future.channel().writeAndFlush(msg);
 				 } else{

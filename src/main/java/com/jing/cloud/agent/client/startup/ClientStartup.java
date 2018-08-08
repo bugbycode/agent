@@ -22,11 +22,17 @@ public class ClientStartup implements ApplicationRunner {
 	@Value("${spring.netty.port}")
 	private int port;
 	
+	@Value("${spring.netty.clientId}")
+	private String clientId;
+	
+	@Value("${spring.netty.secret}")
+	private String secret;
+	
 	@Autowired
 	private Map<String,NettyClient> nettyClientMap;
 	
 	public void run(ApplicationArguments arg0) throws Exception {
-		StartupRunnable run = new StartupRunnable(host,port,nettyClientMap);
+		StartupRunnable run = new StartupRunnable(host,port,clientId,secret,nettyClientMap);
 		new Thread(run).start();
 	}
 
