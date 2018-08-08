@@ -65,7 +65,6 @@ public class ForwardHandler extends SimpleChannelInboundHandler<ByteBuf> {
 	
 	@Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception{
-		logger.error("Exception caught {}.", cause.getMessage());
-        super.exceptionCaught(ctx, cause);
+		logger.error(cause.getMessage());
     }
 }
