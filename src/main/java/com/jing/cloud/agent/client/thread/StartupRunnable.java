@@ -49,8 +49,8 @@ public class StartupRunnable implements Runnable {
 		Bootstrap client = new Bootstrap();
 		EventLoopGroup group = new NioEventLoopGroup();
 		client.group(group).channel(NioSocketChannel.class);
-		client.option(ChannelOption.TCP_NODELAY, true);// 有消息后立刻发送
-		client.option(ChannelOption.SO_KEEPALIVE, true);// 保持长连接
+		client.option(ChannelOption.TCP_NODELAY, true);
+		client.option(ChannelOption.SO_KEEPALIVE, true);
 		client.handler(new ChannelInitializer<SocketChannel>() {
 
 			@Override
@@ -58,7 +58,6 @@ public class StartupRunnable implements Runnable {
 				ch.pipeline().addLast(new IdleStateHandler(IdleConfig.READ_IDEL_TIME_OUT,
 						IdleConfig.WRITE_IDEL_TIME_OUT,
 						IdleConfig.ALL_IDEL_TIME_OUT, TimeUnit.SECONDS));
-				 // 初始化编码器，解码器，处理器
 				 ch.pipeline().addLast(new MessageDecoder(HandlerConst.MAX_FRAME_LENGTH, HandlerConst.LENGTH_FIELD_OFFSET, 
 							HandlerConst.LENGTH_FIELD_LENGTH, HandlerConst.LENGTH_AD_JUSTMENT, 
 							HandlerConst.INITIAL_BYTES_TO_STRIP));
@@ -73,22 +72,20 @@ public class StartupRunnable implements Runnable {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
-					logger.info("连接代理服务器成功...");
+					logger.info("Connection to " + host + ":" + port + " success...");
 					Message msg = new Message();
 					msg.setType(MessageCode.REGISTER);
 					Authentication authInfo = new Authentication("fort", "fort");
 					msg.setData(authInfo);
 					future.channel().writeAndFlush(msg);
 				 } else{
-					 logger.error("连接代理服务器失败...");
+					 logger.error("Connection to " + host + ":" + port + " failed...");
 					 group.shutdownGracefully();
 					 new Thread(StartupRunnable.this).start();
 				 }
 			}
 		});
-		
 	}
-
 	
 	public synchronized void writeAndFlush(Object msg) {
 		future.channel().writeAndFlush(msg);

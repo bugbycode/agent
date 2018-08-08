@@ -1,6 +1,9 @@
 package com.jing.cloud.agent.client.handler;
 
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,22 +35,19 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	@Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		//logger.info("收到服务器返回消息:" + msg);
 		Message message = (Message)msg;
 		String token = message.getToken();
 		int type = message.getType();
 		if(type == MessageCode.REGISTER_ERROR) {
 			ctx.close();
-			logger.info("认证失败关闭连接......");
 		}else if(type == MessageCode.REGISTER_SUCCESS) {
-			logger.info("认证成功......");
-		} else if(type == MessageCode.CLOSE_CONNECTION) {//关闭连接
+			logger.info("Agent auth successfully......");
+		} else if(type == MessageCode.CLOSE_CONNECTION) {
 			NettyClient client = nettyClientMap.get(token);
 			if(client != null) {
 				client.close();
 			}
-		} else if(type == MessageCode.TRANSFER_DATA) { //通信二进制数据
-			//将数据传输至目标设备
+		} else if(type == MessageCode.TRANSFER_DATA) {
 			NettyClient client = nettyClientMap.get(token);
 			if(client != null) {
 				byte[] data = (byte[]) message.getData();
@@ -55,7 +55,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 				buf.writeBytes(data);
 				client.writeAndFlush(buf);
 			}
-		} else if(type == MessageCode.CONNECTION) { //建立连接
+		} else if(type == MessageCode.CONNECTION) {
 			NettyClient client = new NettyClient(ctx.channel(), nettyClientMap);
 			client.connection(message);
 		}
@@ -63,27 +63,26 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	
 	@Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		//logger.info("连接服务成功");
+		
 	}
 	
 	@Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-		//logger.info("代理客户端消息读取完毕......");
-    }
+		
+	}
 	
 	@Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         ctx.close();
         logger.error(cause.getMessage());
-        cause.printStackTrace();
-        new Thread(run).start();
+        closeAllNettyClient();
     }
 	
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        //logger.info("连接关闭");
         super.channelInactive(ctx);
-        
+        closeAllNettyClient();
+        new Thread(run).start();
     }
 
 	@Override
@@ -91,17 +90,23 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		if (evt instanceof IdleStateEvent) {
 			IdleStateEvent event = (IdleStateEvent) evt;
 			if (event.state() == IdleState.READER_IDLE) {
-				/* 读超时 */
-				logger.debug("===服务端===(READER_IDLE 读超时)");
+				logger.debug("Heartbeat timeout.");
 			} else if (event.state() == IdleState.WRITER_IDLE) {
-				/* 写超时 */
-				//logger.debug("发送心跳");
 				Message msg = new Message();
 				msg.setType(MessageCode.HEARTBEAT);
 				ctx.channel().writeAndFlush(msg);
-			} else if (event.state() == IdleState.ALL_IDLE) {
-				/* 总超时 */
-				//logger.debug("===服务端===(ALL_IDLE 总超时)");
+			}
+		}
+	}
+	
+	private void closeAllNettyClient() {
+		Set<Entry<String,NettyClient>> set = nettyClientMap.entrySet();
+		synchronized (nettyClientMap) {
+			Iterator<Entry<String,NettyClient>> it = set.iterator();
+			while(it.hasNext()) {
+				Entry<String,NettyClient> entry = it.next();
+				NettyClient client = entry.getValue();
+				client.close();
 			}
 		}
 	}

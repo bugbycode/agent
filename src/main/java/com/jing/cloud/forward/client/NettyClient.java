@@ -53,8 +53,8 @@ public class NettyClient {
 		this.token = message.getToken();
 		ConnectionInfo conn = (ConnectionInfo) message.getData();
 		this.remoteClient.group(remoteGroup).channel(NioSocketChannel.class);
-		this.remoteClient.option(ChannelOption.TCP_NODELAY, true);// 有消息后立刻发送
-		this.remoteClient.option(ChannelOption.SO_KEEPALIVE, true);// 保持长连接
+		this.remoteClient.option(ChannelOption.TCP_NODELAY, true);
+		this.remoteClient.option(ChannelOption.SO_KEEPALIVE, true);
 		this.remoteClient.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
@@ -73,10 +73,10 @@ public class NettyClient {
 				if(future.isSuccess()) {
 					message.setType(MessageCode.CONNECTION_SUCCESS);
 					nettyClientMap.put(token, NettyClient.this);
-					logger.info("Connection to " + conn.getHost() + ":" + conn.getPort() + " successfully.");
+					logger.info("Connection to " + host + ":" + port + " successfully.");
 				}else {
 					message.setType(MessageCode.CONNECTION_ERROR);
-					logger.info("Connection to " + conn.getHost() + ":" + conn.getPort() + " failed.");
+					logger.info("Connection to " + host + ":" + port + " failed.");
 				}
 				serverChannel.writeAndFlush(message);
 			}
