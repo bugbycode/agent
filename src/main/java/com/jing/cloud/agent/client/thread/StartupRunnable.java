@@ -87,6 +87,7 @@ public class StartupRunnable implements Runnable {
 				 } else{
 					 logger.error("Connection to " + host + ":" + port + " failed...");
 					 group.shutdownGracefully();
+					 Thread.sleep(5000);
 					 new Thread(StartupRunnable.this).start();
 				 }
 			}

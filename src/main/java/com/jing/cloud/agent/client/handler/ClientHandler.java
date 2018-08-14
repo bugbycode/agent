@@ -39,8 +39,9 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		String token = message.getToken();
 		int type = message.getType();
 		if(type == MessageCode.REGISTER_ERROR) {
+			logger.info("Agent auth failed......");
 			ctx.close();
-		}else if(type == MessageCode.REGISTER_SUCCESS) {
+		} else if(type == MessageCode.REGISTER_SUCCESS) {
 			logger.info("Agent auth successfully......");
 		} else if(type == MessageCode.CLOSE_CONNECTION) {
 			NettyClient client = nettyClientMap.get(token);
@@ -82,6 +83,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
         closeAllNettyClient();
+        Thread.sleep(5000);
         new Thread(run).start();
     }
 
