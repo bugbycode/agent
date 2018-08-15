@@ -9,6 +9,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import com.bugbycode.https.HttpsClient;
 import com.jing.cloud.agent.client.thread.StartupRunnable;
 import com.jing.cloud.forward.client.NettyClient;
 
@@ -16,11 +17,11 @@ import com.jing.cloud.forward.client.NettyClient;
 @Configuration
 public class ClientStartup implements ApplicationRunner {
 
-	@Value("${spring.netty.host}")
-	private String host;
+	@Value("${spring.oauth.oauthUri}")
+	private String oauthUri;
 	
-	@Value("${spring.netty.port}")
-	private int port;
+	@Value("${console.uri}")
+	private String consoleUri;
 	
 	@Value("${spring.netty.clientId}")
 	private String clientId;
@@ -28,11 +29,18 @@ public class ClientStartup implements ApplicationRunner {
 	@Value("${spring.netty.secret}")
 	private String secret;
 	
+	@Value("${server.keystorePath}")
+	private String keystorePath;
+	
+	@Value("${server.keystorePassword}")
+	private String keystorePassword;
+	
 	@Autowired
 	private Map<String,NettyClient> nettyClientMap;
 	
 	public void run(ApplicationArguments arg0) throws Exception {
-		StartupRunnable run = new StartupRunnable(host,port,clientId,secret,nettyClientMap);
+		HttpsClient client = new HttpsClient(keystorePath, keystorePassword);
+		StartupRunnable run = new StartupRunnable(oauthUri,consoleUri,clientId,secret,nettyClientMap,client);
 		new Thread(run).start();
 	}
 
