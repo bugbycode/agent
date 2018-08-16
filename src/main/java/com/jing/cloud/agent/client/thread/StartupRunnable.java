@@ -127,7 +127,8 @@ public class StartupRunnable implements Runnable {
 				run();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			logger.error(e.getMessage());
 			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e1) {
