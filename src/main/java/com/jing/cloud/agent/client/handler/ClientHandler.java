@@ -12,6 +12,7 @@ import com.jing.cloud.agent.client.thread.StartupRunnable;
 import com.jing.cloud.forward.client.NettyClient;
 import com.jing.cloud.module.Message;
 import com.jing.cloud.module.MessageCode;
+import com.thread.ScanHostThreadPool;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,6 +25,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 	private final Logger logger = LogManager.getLogger(ClientHandler.class);
 	
 	private StartupRunnable run;
+	
+	private ScanHostThreadPool stp;
 	
 	private Map<String,NettyClient> nettyClientMap;
 	
@@ -42,6 +45,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 			logger.info("Agent auth failed......");
 			ctx.close();
 		} else if(type == MessageCode.REGISTER_SUCCESS) {
+			this.stp = new ScanHostThreadPool(null, ctx.channel());
 			logger.info("Agent auth successfully......");
 		} else if(type == MessageCode.CLOSE_CONNECTION) {
 			NettyClient client = nettyClientMap.get(token);
@@ -59,6 +63,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 		} else if(type == MessageCode.CONNECTION) {
 			NettyClient client = new NettyClient(ctx.channel(), nettyClientMap);
 			client.connection(message);
+		} else if(type == MessageCode.SCAN_OS) {
+			stp.addMessage(message);
 		}
 	}
 	
@@ -83,6 +89,9 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
         closeAllNettyClient();
+        if(this.stp != null) {
+            this.stp.close();
+        }
         Thread.sleep(5000);
         new Thread(run).start();
     }
