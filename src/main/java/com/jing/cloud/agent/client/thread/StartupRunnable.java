@@ -1,5 +1,6 @@
 package com.jing.cloud.agent.client.thread;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,6 +104,13 @@ public class StartupRunnable implements Runnable {
 			if(json.length() > 0) {
 				host = json.getString("ip");
 				port = json.getInt("port");
+				
+				if("127.0.0.1".equals(host) || "localhost".equals(host)) {
+					URL authUrl = new URL(oauthUri);
+					host = authUrl.getHost();
+					port = 50000;
+				}
+				
 				future = client.connect(host, port).addListener(new ChannelFutureListener() {
 					
 					@Override
