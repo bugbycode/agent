@@ -44,6 +44,8 @@ public class StartupRunnable implements Runnable {
 	
 	private int port;
 	
+	private int proxyPort;
+	
 	private String clientId;
 	
 	private String secret;
@@ -58,13 +60,16 @@ public class StartupRunnable implements Runnable {
 	
 	private Map<String,NettyClient> nettyClientMap;
 	
-	public StartupRunnable(String oauthUri, String consoleUri,String clientId,String secret,Map<String,NettyClient> nettyClientMap,HttpsClient httpsClient) {
+	public StartupRunnable(String oauthUri, String consoleUri,
+			String clientId,String secret,Map<String,NettyClient> nettyClientMap,
+			HttpsClient httpsClient,int proxyPort) {
 		this.clientId = clientId;
 		this.secret = secret;
 		this.nettyClientMap = nettyClientMap;
 		this.oauthUri = oauthUri;
 		this.consoleUri = consoleUri;
 		this.httpsClient = httpsClient;
+		this.proxyPort = proxyPort;
 	}
 
 	public void run() {
@@ -108,7 +113,7 @@ public class StartupRunnable implements Runnable {
 				if("127.0.0.1".equals(host) || "localhost".equals(host)) {
 					URL authUrl = new URL(oauthUri);
 					host = authUrl.getHost();
-					port = 50000;
+					port = this.proxyPort;
 				}
 				
 				future = client.connect(host, port).addListener(new ChannelFutureListener() {

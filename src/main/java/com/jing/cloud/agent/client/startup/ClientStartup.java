@@ -35,12 +35,16 @@ public class ClientStartup implements ApplicationRunner {
 	@Value("${server.keystorePassword}")
 	private String keystorePassword;
 	
+	@Value("${spring.default.proxyPort}")
+	private int proxyPort;
+	
 	@Autowired
 	private Map<String,NettyClient> nettyClientMap;
 	
 	public void run(ApplicationArguments arg0) throws Exception {
 		HttpsClient client = new HttpsClient(keystorePath, keystorePassword);
-		StartupRunnable run = new StartupRunnable(oauthUri,consoleUri,clientId,secret,nettyClientMap,client);
+		StartupRunnable run = new StartupRunnable(oauthUri,consoleUri,
+				clientId,secret,nettyClientMap,client,proxyPort);
 		new Thread(run).start();
 	}
 
